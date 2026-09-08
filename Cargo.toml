@@ -1,0 +1,17 @@
+[package]
+name = "rrun"
+version = "0.1.0"
+description = "Yet another script runner"
+license = "GPL-3.0-or-later"
+readme = "README.md"
+edition = "2024"
+authors = ["sm0qs"]
+
+[dependencies]
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
