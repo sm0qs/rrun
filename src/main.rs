@@ -7,5 +7,7 @@ use logging::init_logging;
 
 fn main() {
 	init_logging();
-	let _args = Cli::parse();
+	let args = Cli::parse();
+
+	println!("Running script {}", args.script);
 }
