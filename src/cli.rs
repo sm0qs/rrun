@@ -13,5 +13,5 @@ fn get_styles() -> Styles {
 #[command(version, about, styles = get_styles())]
 pub struct Cli {
 	/// Script to run
-	pub script: String,
+	pub script: Option<String>,
 }

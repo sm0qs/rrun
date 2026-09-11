@@ -4,18 +4,25 @@ mod paths;
 
 use clap::Parser;
 use cli::Cli;
-use logging::init_logging;
+use logging::Logger;
 use paths::AppPaths;
 use std::io;
+use tracing::info;
 
 fn main() -> io::Result<()> {
-	init_logging();
+	Logger::init();
+
+	AppPaths::init()?;
+
 	let args = Cli::parse();
-
-	let paths = AppPaths::new();
-	paths.ensure_dirs()?;
-
-	println!("Running script {}", args.script);
+	match args.script {
+		Some(script) => {
+			info!("Running script: {}", script);
+		}
+		None => {
+			info!("No script provided.");
+		}
+	}
 
 	Ok(())
 }
