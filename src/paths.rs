@@ -2,7 +2,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
-use tracing::info;
+use tracing::debug;
 
 pub struct AppPaths {
 	config: PathBuf,
@@ -22,7 +22,7 @@ impl AppPaths {
 
 	fn ensure(&self) -> io::Result<()> {
 		fs::create_dir_all(&self.config)?;
-		info!(
+		debug!(
 			"Ensured config directory exists at {}",
 			self.config.display()
 		);

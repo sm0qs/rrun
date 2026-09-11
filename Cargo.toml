@@ -8,6 +8,7 @@ edition = "2024"
 authors = ["sm0qs"]
 
 [dependencies]
+anyhow = "1.0.104"
 clap = { version = "4.6.6", features = ["derive"] }
 dirs = "7.0.0"
 tracing = "0.1.44"

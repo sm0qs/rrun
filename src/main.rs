@@ -2,17 +2,17 @@ mod cli;
 mod logging;
 mod paths;
 
+use anyhow::{Context, Result};
 use clap::Parser;
 use cli::Cli;
 use logging::Logger;
 use paths::AppPaths;
-use std::io;
-use tracing::info;
+use tracing::{info, warn};
 
-fn main() -> io::Result<()> {
+fn main() -> Result<()> {
 	Logger::init();
 
-	AppPaths::init()?;
+	AppPaths::init().context("Failed to initialize application paths")?;
 
 	let args = Cli::parse();
 	match args.script {
@@ -20,7 +20,7 @@ fn main() -> io::Result<()> {
 			info!("Running script: {}", script);
 		}
 		None => {
-			info!("No script provided.");
+			warn!("No script provided.");
 		}
 	}
 
