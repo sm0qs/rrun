@@ -1,34 +1,36 @@
 use crate::config::Config;
-use anyhow::{Context, Result, bail};
 use comfy_table::{Cell, Color, Table};
-use std::process::Command;
-use tracing::{info, warn};
+use process::Command;
+use std::process;
+use tracing::{error, info, warn};
 
 pub struct Runner;
 
 impl Runner {
-	pub fn run(config: &Config, script_name: &str) -> Result<()> {
-		let script_def = config
-			.find_script(script_name)
-			.ok_or_else(|| anyhow::anyhow!("Script '{}' not found", script_name))?;
+	pub fn run(config: &Config, script_name: &str) {
+		let Some(script_def) = config.find_script(script_name) else {
+			warn!("Script '{}' not found", script_name);
+			process::exit(1);
+		};
 
 		info!("Running Script: {}", script_name);
 
 		for step in &script_def.steps {
 			info!("Executing: {}", step.run);
 
-			let status = Command::new("sh")
-				.arg("-c")
-				.arg(&step.run)
-				.status()
-				.with_context(|| format!("Failed to execute: {}", step.run))?;
+			let status = match Command::new("sh").arg("-c").arg(&step.run).status() {
+				Ok(status) => status,
+				Err(err) => {
+					error!("Failed to execute '{}': {}", step.run, err);
+					process::exit(1);
+				}
+			};
 
 			if !status.success() {
-				bail!("Command failed with exit code: {:?}", status.code());
+				warn!("Command failed with exit code: {:?}", status.code());
+				process::exit(status.code().unwrap_or(1));
 			}
 		}
-
-		Ok(())
 	}
 
 	pub fn list(config: &Config) {
@@ -63,6 +65,6 @@ impl Runner {
 			]);
 		}
 
-		println!("{table}");
+		println!("{}", table);
 	}
 }

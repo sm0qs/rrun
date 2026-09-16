@@ -13,6 +13,7 @@ impl Logger {
 
 		tracing_subscriber::fmt()
 			.with_env_filter(EnvFilter::new(level))
+			.without_time()
 			.init();
 	}
 }
