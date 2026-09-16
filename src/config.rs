@@ -25,8 +25,14 @@ pub struct Script {
 	pub host: Option<Vec<String>>,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Default)]
 pub struct Config {
+	pub global_scripts: BTreeMap<String, Script>,
+	pub local_scripts: BTreeMap<String, Script>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct ConfigFile {
 	#[allow(dead_code)]
 	pub log_level: Option<String>,
 	#[serde(default)]
@@ -34,25 +40,34 @@ pub struct Config {
 }
 
 impl Config {
-	pub fn load_from_dir(dir: &Path) -> anyhow::Result<Self> {
-		let files = Self::discover_files(dir)?;
-		let mut combined_config = Config::default();
-
-		for file in files {
-			match Self::load_from_file(&file) {
-				Ok(cfg) => {
-					combined_config.scripts.extend(cfg.scripts);
-				}
-				Err(err) => warn!("Could not load {}: {}", file.display(), err),
-			}
-		}
-		Ok(combined_config)
+	pub fn find_script(&self, name: &str) -> Option<&Script> {
+		self.local_scripts
+			.get(name)
+			.or_else(|| self.global_scripts.get(name))
 	}
-	fn discover_files(dir: &Path) -> io::Result<Vec<PathBuf>> {
-		let mut results = Vec::new();
-		Self::find_toml_files(dir, &mut results)?;
 
-		if results.is_empty() {
+	pub fn load(global_dir: &Path, local_dir: Option<&Path>) -> anyhow::Result<Self> {
+		let global_scripts = Self::load_scripts_from_dir(global_dir, true)?;
+
+		let local_scripts = match local_dir {
+			Some(dir) => Self::load_scripts_from_dir(dir, false)?,
+			None => BTreeMap::new(),
+		};
+
+		Ok(Self {
+			global_scripts,
+			local_scripts,
+		})
+	}
+
+	fn load_scripts_from_dir(
+		dir: &Path,
+		create_sample_if_empty: bool,
+	) -> anyhow::Result<BTreeMap<String, Script>> {
+		let mut files = Vec::new();
+		Self::find_toml_files(dir, &mut files)?;
+
+		if files.is_empty() && create_sample_if_empty {
 			let hello_path = dir.join("hello.toml");
 			const HELLO_TOML: &str = r#"# Sample hello.toml configuration file
 [scripts.hello]
@@ -63,10 +78,19 @@ steps = [
 "#;
 
 			fs::write(&hello_path, HELLO_TOML)?;
-			results.push(hello_path);
+			files.push(hello_path);
+		}
+		let mut scripts = BTreeMap::new();
+		for file in files {
+			match Self::load_file(&file) {
+				Ok(cfg) => {
+					scripts.extend(cfg.scripts);
+				}
+				Err(err) => warn!("Could not load {}: {}", file.display(), err),
+			}
 		}
 
-		Ok(results)
+		Ok(scripts)
 	}
 
 	fn find_toml_files(dir: &Path, results: &mut Vec<PathBuf>) -> io::Result<()> {
@@ -79,12 +103,14 @@ steps = [
 				results.push(path);
 			}
 		}
+
 		Ok(())
 	}
 
-	fn load_from_file(path: &Path) -> anyhow::Result<Self> {
+	fn load_file(path: &Path) -> anyhow::Result<ConfigFile> {
 		let content = fs::read_to_string(path)?;
 		let config = toml::from_str(&content)?;
+
 		Ok(config)
 	}
 }

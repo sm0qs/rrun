@@ -15,7 +15,7 @@ fn main() -> Result<()> {
 	Logger::init();
 
 	let paths = AppPaths::init().context("Failed to initialize application paths")?;
-	let config = Config::load_from_dir(&paths.config)?;
+	let config = Config::load(&paths.global_config, paths.local_config.as_deref())?;
 
 	let args = Cli::parse();
 	match args.script {
