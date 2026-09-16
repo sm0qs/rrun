@@ -1,26 +1,27 @@
 mod cli;
+mod config;
 mod logging;
 mod paths;
+mod runner;
 
+use crate::config::Config;
+use crate::logging::Logger;
+use crate::paths::AppPaths;
+use crate::{cli::Cli, runner::Runner};
 use anyhow::{Context, Result};
 use clap::Parser;
-use cli::Cli;
-use logging::Logger;
-use paths::AppPaths;
-use tracing::{info, warn};
 
 fn main() -> Result<()> {
 	Logger::init();
 
-	AppPaths::init().context("Failed to initialize application paths")?;
+	let paths = AppPaths::init().context("Failed to initialize application paths")?;
+	let config = Config::load_from_dir(&paths.config)?;
 
 	let args = Cli::parse();
 	match args.script {
-		Some(script) => {
-			info!("Running script: {}", script);
-		}
+		Some(script_name) => Runner::run(&config, &script_name)?,
 		None => {
-			warn!("No script provided.");
+			Runner::list(&config);
 		}
 	}
 

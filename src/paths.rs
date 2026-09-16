@@ -1,11 +1,10 @@
 use std::fs;
 use std::io;
-use std::path::Path;
 use std::path::PathBuf;
 use tracing::debug;
 
 pub struct AppPaths {
-	config: PathBuf,
+	pub config: PathBuf,
 }
 
 impl AppPaths {
@@ -28,9 +27,5 @@ impl AppPaths {
 		);
 
 		Ok(())
-	}
-
-	pub fn _config_dir(&self) -> &Path {
-		&self.config
 	}
 }
