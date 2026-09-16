@@ -1,7 +1,7 @@
-use std::process::Command;
-
 use crate::config::Config;
 use anyhow::{Context, Result, bail};
+use comfy_table::{Cell, Color, Table};
+use std::process::Command;
 use tracing::{info, warn};
 
 pub struct Runner;
@@ -40,18 +40,29 @@ impl Runner {
 			return;
 		}
 
-		if has_local {
-			println!("Project Scripts (.rrun):");
-			for (name, script) in &config.local_scripts {
-				println!("  {}: {}", name, script.description);
-			}
+		let mut table = Table::new();
+		table.set_header(vec![
+			Cell::new("Name").fg(Color::Cyan),
+			Cell::new("Description").fg(Color::Cyan),
+			Cell::new("Scope").fg(Color::Cyan),
+		]);
+
+		for (name, script) in &config.local_scripts {
+			table.add_row(vec![
+				Cell::new(name).fg(Color::Green),
+				Cell::new(&script.description),
+				Cell::new("Project").fg(Color::Yellow),
+			]);
 		}
 
-		if has_global {
-			println!("Global scripts:");
-			for (name, script) in &config.global_scripts {
-				println!("  {}: {}", name, script.description);
-			}
+		for (name, script) in &config.global_scripts {
+			table.add_row(vec![
+				Cell::new(name).fg(Color::Green),
+				Cell::new(&script.description),
+				Cell::new("Global").fg(Color::Red),
+			]);
 		}
+
+		println!("{table}");
 	}
 }
